@@ -63,7 +63,7 @@
     }
     .paw{
       position:absolute;
-      font-size:22px;
+      font-size:16px;
       opacity:.16;
       filter:grayscale(1);
       transform:rotate(var(--r));
@@ -370,11 +370,7 @@
 
   <header class="topbar">
     <a class="brand" href="#home" aria-label="CAT home">
-      <svg class="cat-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <path d="M15 27 10 13l14 8a29 29 0 0 1 16 0l14-8-5 14v12c0 11-8 18-17 18S15 50 15 39Z"/>
-        <path d="M24 36h1M39 36h1M27 44c3 2 7 2 10 0M8 37h13M43 37h13M10 44l12-2M42 42l12 2"/>
-      </svg>
-      <span>cat</span>
+      <span>ᓚᘏᗢ</span>
     </a>
 
     <nav class="main-nav">
@@ -490,7 +486,7 @@
     positions.forEach((p, i) => {
       const span = document.createElement("span");
       span.className = "paw" + ([4,12,19,25,33].includes(i) ? " hot" : ([2,20].includes(i) ? " cool" : ""));
-      span.textContent = "🐾";
+      span.textContent = "ᓚᘏᗢ";
       span.style.left = p[0] + "%";
       span.style.top = p[1] + "%";
       span.style.setProperty("--r", ((i % 5) * 6 - 12) + "deg");
