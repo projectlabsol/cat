@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a1013" />
+  <title>CAT — Solana Cat Finder</title>
+  <meta name="description" content="Every Solana address hides a cat." />
+
+  <style>
+    :root{
+      --bg:#091014;
+      --bg-soft:#0d171b;
+      --panel:rgba(15,24,27,.82);
+      --panel-2:rgba(20,31,34,.82);
+      --text:#f7f1e7;
+      --muted:#9da5a4;
+      --line:rgba(247,241,231,.18);
+      --mint:#9ddbd2;
+      --mint-2:#c5f1ea;
+      --coral:#db7867;
+      --dark:#061014;
+      --shadow:0 24px 70px rgba(0,0,0,.42);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 50% 48%, rgba(157,219,210,.06), transparent 30%),
+        linear-gradient(180deg,#091014 0%,#081014 100%);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x:hidden;
+    }
+
+    body.light{
+      --bg:#f2eee6;
+      --bg-soft:#ece6dc;
+      --panel:rgba(255,255,255,.76);
+      --panel-2:rgba(255,255,255,.88);
+      --text:#152025;
+      --muted:#667175;
+      --line:rgba(10,20,25,.18);
+      --dark:#102027;
+      --shadow:0 24px 70px rgba(38,48,52,.18);
+      background:
+        radial-gradient(circle at 50% 48%, rgba(58,140,130,.10), transparent 30%),
+        linear-gradient(180deg,#f5f1ea 0%,#eee8de 100%);
+    }
+
+    a{color:inherit;text-decoration:none}
+    button,input{font:inherit}
+
+    .paw-field{
+      position:fixed;
+      inset:72px 0 54px;
+      pointer-events:none;
+      z-index:0;
+      overflow:hidden;
+    }
+    .paw{
+      position:absolute;
+      font-size:22px;
+      opacity:.16;
+      filter:grayscale(1);
+      transform:rotate(var(--r));
+      user-select:none;
+    }
+    .paw.hot{
+      opacity:.45;
+      filter:none;
+      color:var(--coral);
+    }
+    .paw.cool{
+      opacity:.26;
+      filter:none;
+      color:var(--mint);
+    }
+
+    .topbar{
+      position:relative;
+      z-index:5;
+      height:72px;
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      align-items:center;
+      border-bottom:1px solid var(--line);
+      background:rgba(5,10,12,.72);
+      backdrop-filter:blur(18px);
+      padding-left:34px;
+    }
+    body.light .topbar{background:rgba(246,242,235,.74)}
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:900;
+      font-size:22px;
+      letter-spacing:-.5px;
+      padding-right:28px;
+    }
+    .cat-mark{
+      width:34px;height:34px;
+      stroke:var(--text);
+      fill:none;
+      stroke-width:1.8;
+    }
+
+    .main-nav{
+      display:flex;
+      gap:26px;
+      align-items:center;
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .main-nav a,.main-nav button{
+      opacity:.9;
+      background:none;
+      border:0;
+      color:var(--text);
+      cursor:pointer;
+      padding:9px 0;
+    }
+    .main-nav .buy{
+      background:var(--mint);
+      color:var(--dark);
+      padding:11px 22px;
+      border-radius:4px;
+      box-shadow:0 0 0 1px rgba(255,255,255,.18) inset;
+      opacity:1;
+    }
+
+    .stats{
+      display:flex;
+      height:72px;
+      border-left:1px solid var(--line);
+    }
+    .stat{
+      min-width:112px;
+      padding:12px 18px;
+      border-right:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:3px;
+    }
+    .stat small{
+      color:var(--muted);
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.08em;
+    }
+    .stat strong{font-size:15px;letter-spacing:.02em}
+    .stat .down{color:var(--coral)}
+    .live{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:10px;
+      font-weight:900;
+      color:var(--coral);
+      margin-top:2px;
+    }
+    .live i{
+      width:7px;height:7px;border-radius:50%;
+      background:var(--coral);
+      box-shadow:0 0 12px var(--coral);
+    }
+
+    main{
+      position:relative;
+      z-index:2;
+      min-height:calc(100vh - 126px);
+      display:grid;
+      place-items:center;
+      padding:72px 24px 95px;
+    }
+    .hero{
+      width:min(860px,100%);
+      transform:translateY(-12px);
+    }
+    h1{
+      margin:0;
+      font-size:clamp(48px,6vw,78px);
+      line-height:1.02;
+      letter-spacing:-.055em;
+      font-weight:900;
+      text-shadow:0 8px 24px rgba(0,0,0,.18);
+    }
+    h1 .accent{color:var(--mint)}
+    .subtitle{
+      margin:14px 0 28px;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    .finder{
+      border:1px solid var(--line);
+      background:linear-gradient(145deg,var(--panel-2),var(--panel));
+      border-radius:14px;
+      padding:26px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
+    }
+    .finder-head{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .finder h2{
+      margin:0;
+      font-size:19px;
+      letter-spacing:-.02em;
+    }
+    .mini-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{
+      border:1px solid rgba(157,219,210,.52);
+      color:var(--mint-2);
+      background:transparent;
+      border-radius:999px;
+      padding:10px 16px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+    .pill:hover{transform:translateY(-1px);background:rgba(157,219,210,.08)}
+    .pill.stray{
+      border-color:rgba(219,120,103,.65);
+      color:#ef9a8c;
+    }
+
+    .search-row{
+      display:grid;
+      grid-template-columns:1fr 170px;
+      gap:12px;
+    }
+    .search-row input{
+      min-width:0;
+      height:58px;
+      color:var(--text);
+      background:rgba(0,0,0,.12);
+      border:1px solid rgba(157,219,210,.45);
+      border-radius:5px;
+      padding:0 18px;
+      outline:none;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    .search-row input:focus{
+      border-color:var(--mint);
+      box-shadow:0 0 0 3px rgba(157,219,210,.10);
+    }
+    .find-btn{
+      border:0;
+      border-radius:5px;
+      background:linear-gradient(135deg,var(--mint-2),var(--mint));
+      color:var(--dark);
+      font-weight:900;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+    .find-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+
+    .security{
+      margin-top:17px;
+      color:var(--muted);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+    }
+    .security b{color:var(--mint)}
+
+    .result{
+      display:none;
+      margin-top:18px;
+      border-top:1px solid var(--line);
+      padding-top:18px;
+      align-items:center;
+      gap:16px;
+    }
+    .result.show{display:flex}
+    .result-cat{
+      width:62px;height:62px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      font-size:34px;
+      background:rgba(157,219,210,.08);
+    }
+    .result strong{display:block;font-size:17px}
+    .result span{color:var(--muted);font-size:13px}
+
+    footer{
+      position:relative;
+      z-index:5;
+      height:54px;
+      border-top:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 38px;
+      font-size:12px;
+      background:rgba(5,10,12,.68);
+      backdrop-filter:blur(16px);
+    }
+    body.light footer{background:rgba(246,242,235,.72)}
+    footer .still{color:var(--muted)}
+    footer .still b{color:var(--mint)}
+    .footer-nav{display:flex;gap:34px;font-weight:800}
+
+    .toast{
+      position:fixed;
+      z-index:20;
+      left:50%;
+      bottom:76px;
+      transform:translate(-50%,20px);
+      background:var(--text);
+      color:var(--dark);
+      padding:11px 15px;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:900;
+      opacity:0;
+      pointer-events:none;
+      transition:.25s ease;
+    }
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+
+    @media (max-width:1100px){
+      .stats{display:none}
+      .topbar{grid-template-columns:auto 1fr}
+      .main-nav{justify-content:flex-end;padding-right:24px;gap:18px}
+    }
+    @media (max-width:760px){
+      .topbar{
+        height:auto;
+        min-height:68px;
+        grid-template-columns:1fr auto;
+        padding:0 16px;
+      }
+      .main-nav a:not(.buy), .main-nav button:not(#modeBtn){display:none}
+      .main-nav{padding-right:0}
+      .brand{padding-right:0}
+      main{padding:74px 16px 90px}
+      .hero{transform:none}
+      h1{font-size:48px}
+      .subtitle{font-size:14px;line-height:1.5}
+      .finder{padding:18px}
+      .finder-head{align-items:flex-start;flex-direction:column}
+      .search-row{grid-template-columns:1fr}
+      .find-btn{height:54px}
+      footer{padding:0 16px}
+      .footer-nav{display:none}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="paw-field" id="pawField" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="CAT home">
+      <svg class="cat-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M15 27 10 13l14 8a29 29 0 0 1 16 0l14-8-5 14v12c0 11-8 18-17 18S15 50 15 39Z"/>
+        <path d="M24 36h1M39 36h1M27 44c3 2 7 2 10 0M8 37h13M43 37h13M10 44l12-2M42 42l12 2"/>
+      </svg>
+      <span>cat</span>
+    </a>
+
+    <nav class="main-nav">
+      <a class="buy" id="buyLink" href="#" target="_blank" rel="noreferrer">buy cat</a>
+      <a href="#chart">chart</a>
+      <a href="#board">board</a>
+      <button id="copyCaTop">copy ca</button>
+      <button id="copyCatBtn">copy cat</button>
+      <a id="xLink" href="#" target="_blank" rel="noreferrer">x</a>
+      <a href="#manifesto">manifesto</a>
+      <button id="modeBtn">light mode</button>
+    </nav>
+
+    <div class="stats">
+      <div class="stat">
+        <small>MCAP</small>
+        <strong id="mcap">$18.7M</strong>
+      </div>
+      <div class="stat">
+        <small>VOL 24H</small>
+        <strong id="volume">$412.6K</strong>
+      </div>
+      <div class="stat">
+        <small>24H</small>
+        <strong class="down" id="change">-3.21%</strong>
+      </div>
+      <div class="stat">
+        <div class="live"><i></i> LIVE</div>
+      </div>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <h1>The ticker is: <span class="accent">CAT</span></h1>
+      <p class="subtitle">Every Solana address hides a cat. Holdings dress it. Then you chase things.</p>
+
+      <div class="finder">
+        <div class="finder-head">
+          <h2>Find your cat.</h2>
+          <div class="mini-actions">
+            <button class="pill" id="walletBtn">▣&nbsp; use my wallet</button>
+            <button class="pill stray" id="strayBtn">🐈&nbsp; meet a stray →</button>
+          </div>
+        </div>
+
+        <div class="search-row">
+          <input id="walletInput" type="text" spellcheck="false" autocomplete="off"
+                 placeholder="paste any Solana address" aria-label="Solana address" />
+          <button class="find-btn" id="findBtn">find cat&nbsp; 🐾</button>
+        </div>
+
+        <div class="security">
+          PUBLIC BALANCE VIA JUPITER &nbsp;/&nbsp; SOLANA RPC
+          &nbsp;<b>•</b>&nbsp; NO SIGNATURE
+          &nbsp;<b>•</b>&nbsp; NO TRANSACTION
+        </div>
+
+        <div class="result" id="result">
+          <div class="result-cat" id="resultCat">🐈</div>
+          <div>
+            <strong id="catName">Your cat is ready.</strong>
+            <span id="catInfo">Paste a wallet to generate its cat.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="still">the ticker is still: <b>CAT</b> ᓚᘏᗢ</div>
+    <nav class="footer-nav">
+      <a href="#" id="buyLinkFooter" target="_blank" rel="noreferrer">buy cat</a>
+      <a href="#chart">chart</a>
+      <a href="#board">board</a>
+      <a href="#" id="xLinkFooter" target="_blank" rel="noreferrer">x</a>
+      <a href="#manifesto">manifesto</a>
+    </nav>
+  </footer>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <script>
+    /*
+      EDIT THESE 3 VALUES:
+      1) Your token contract address
+      2) Your buy link
+      3) Your X/Twitter link
+    */
+    const TOKEN_CA = "PASTE_YOUR_CONTRACT_ADDRESS_HERE";
+    const BUY_URL  = "https://pump.fun/";
+    const X_URL    = "https://x.com/";
+
+    const buyLink = document.getElementById("buyLink");
+    const buyLinkFooter = document.getElementById("buyLinkFooter");
+    const xLink = document.getElementById("xLink");
+    const xLinkFooter = document.getElementById("xLinkFooter");
+
+    buyLink.href = BUY_URL;
+    buyLinkFooter.href = BUY_URL;
+    xLink.href = X_URL;
+    xLinkFooter.href = X_URL;
+
+    const pawField = document.getElementById("pawField");
+    const positions = [
+      [3,6],[16,7],[31,6],[45,7],[59,6],[72,7],[85,6],[96,7],
+      [8,25],[24,24],[39,26],[54,25],[68,24],[82,26],[94,24],
+      [3,47],[15,48],[29,47],[44,48],[58,47],[72,48],[87,47],[96,48],
+      [8,68],[19,70],[33,68],[45,70],[58,68],[70,70],[83,68],[96,70],
+      [3,88],[15,88],[29,88],[44,88],[58,88],[72,88],[86,88],[97,88]
+    ];
+
+    positions.forEach((p, i) => {
+      const span = document.createElement("span");
+      span.className = "paw" + ([4,12,19,25,33].includes(i) ? " hot" : ([2,20].includes(i) ? " cool" : ""));
+      span.textContent = "🐾";
+      span.style.left = p[0] + "%";
+      span.style.top = p[1] + "%";
+      span.style.setProperty("--r", ((i % 5) * 6 - 12) + "deg");
+      pawField.appendChild(span);
+    });
+
+    const toast = document.getElementById("toast");
+    function showToast(text){
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    async function copyText(text, label){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast(label);
+      }catch{
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+        showToast(label);
+      }
+    }
+
+    document.getElementById("copyCaTop").addEventListener("click", () => {
+      copyText(TOKEN_CA, "Contract address copied");
+    });
+
+    document.getElementById("copyCatBtn").addEventListener("click", () => {
+      copyText("CAT", "CAT copied");
+    });
+
+    const modeBtn = document.getElementById("modeBtn");
+    modeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      modeBtn.textContent = document.body.classList.contains("light") ? "dark mode" : "light mode";
+    });
+
+    const walletInput = document.getElementById("walletInput");
+    const result = document.getElementById("result");
+    const resultCat = document.getElementById("resultCat");
+    const catName = document.getElementById("catName");
+    const catInfo = document.getElementById("catInfo");
+
+    const catNames = ["Mochi","Pixel","Sol","Luna","Whiskers","Nori","Miso","Nova","Pumpkin","Satoshi"];
+    const catIcons = ["🐈","🐈‍⬛","😺","😸","😼","😻"];
+
+    function hashString(str){
+      let h = 0;
+      for(let i=0;i<str.length;i++) h = ((h << 5) - h) + str.charCodeAt(i);
+      return Math.abs(h);
+    }
+
+    function findCat(address){
+      const clean = address.trim();
+      if(!clean){
+        showToast("Paste a Solana address");
+        walletInput.focus();
+        return;
+      }
+      const h = hashString(clean);
+      const name = catNames[h % catNames.length];
+      const icon = catIcons[h % catIcons.length];
+      resultCat.textContent = icon;
+      catName.textContent = `${name} found.`;
+      catInfo.textContent = `Wallet ${clean.slice(0,5)}…${clean.slice(-5)} has a rare Solana cat.`;
+      result.classList.add("show");
+    }
+
+    document.getElementById("findBtn").addEventListener("click", () => findCat(walletInput.value));
+    walletInput.addEventListener("keydown", e => {
+      if(e.key === "Enter") findCat(walletInput.value);
+    });
+
+    document.getElementById("strayBtn").addEventListener("click", () => {
+      const fake = "Stray" + Math.random().toString(36).slice(2,14);
+      walletInput.value = fake;
+      findCat(fake);
+    });
+
+    document.getElementById("walletBtn").addEventListener("click", async () => {
+      try{
+        const provider = window.solana;
+        if(provider && provider.isPhantom){
+          const response = await provider.connect();
+          walletInput.value = response.publicKey.toString();
+          findCat(walletInput.value);
+        }else{
+          showToast("Phantom wallet not detected");
+        }
+      }catch{
+        showToast("Wallet connection cancelled");
+      }
+    });
+  </script>
+</body>
+</html>
